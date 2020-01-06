@@ -86,12 +86,6 @@ class ShellQuantity(object):
         for name, g in self.Sigma_iw:
             g.zero()
 
-        # Local Green's function
-        self.Gloc_iw = make_block_gf(GfImFreq, gf_struct, beta, n_iw)
-        for name, g in self.Gloc_iw:
-            g.zero()
-
-
 def solve_impurity_model(solver_name, solver_params, mpirun_command, basis_rot, Umat, gf_struct, beta, n_iw, Sigma_iw, Gloc_iw, mesh, ish, work_dir):
     """
 
@@ -291,8 +285,8 @@ class DMFTCoreSolver(object):
                 raise RuntimeError('Wrong chemical potential {} found in {}! Given mu in system block = {}.'.format(self._chemical_potential, output_file, self._params['system']['mu']))
 
         # Load self-energy
-        print("Loading Sigma_iw... ")
         with h5py.File(self._output_file, 'r') as ar:
+            print("Loading Sigma_iw... ")
             for ish in range(self._n_inequiv_shells):
                 for bname, g in self._sh_quant[ish].Sigma_iw:
                     path = output_group + '/Sigma_iw/ite{}/sh{}/{}'.format(iterations, ish, bname)
@@ -300,7 +294,7 @@ class DMFTCoreSolver(object):
                 diff = make_hermite_conjugate(self._sh_quant[ish].Sigma_iw)
                 if diff > 1e-8:
                     print('Sigma_iw at shell {} is not exactly hermite: diff = {}, symmetrizing...'.format(ish, diff))
-
+           
     def _prepare_output_file__from_scratch(self):
         """
         Set up an output HDF5 file.
@@ -605,8 +599,13 @@ class DMFTCoreSolver(object):
 
             # Compute Gloc_iw where the chemical potential is adjusted if needed
             Gloc_iw_sh, dm_sh = self.calc_Gloc()
-            for ish in range(self._n_inequiv_shells):
-                self._sh_quant[ish].Gloc_iw << Gloc_iw_sh[ish]
+            if self._params['control']['save_Gloc_iw']:
+                for ish in range(self._n_inequiv_shells):
+                    with HDFArchive(self._output_file, 'a') as ar:
+                        for bname, g in Gloc_iw_sh[ish]:
+                            path = output_group + '/Gloc_iw/ite{}/sh{}/{}'.format(iteration_number, ish, bname)
+                            save_giw(ar, path, g)
+
             self.print_density_matrix(dm_sh)
 
             for ish in range(self._n_inequiv_shells):
@@ -658,12 +657,6 @@ class DMFTCoreSolver(object):
                         path = output_group + '/Sigma_iw/ite{}/sh{}/{}'.format(iteration_number, ish, bname)
                         save_giw(ar, path, g)
 
-                    if self._params['control']['save_Gloc_iw']:
-                        for bname, g in self._sh_quant[ish].Gloc_iw:
-                            path = output_group + '/Gloc_iw/ite{}/sh{}/{}'.format(iteration_number, ish, bname)
-                            save_giw(ar, path, g)
-
-
             sys.stdout.flush()
 
         self._previous_runs += max_step
@@ -707,14 +700,20 @@ class DMFTCoreSolver(object):
         return self.inequiv_shell_info(self._sk.corr_to_inequiv[ish])
 
     def Sigma_iw_sh(self, iteration_number):
-        Sigma_iw_sh = []
+        return self.load_local_g_sh(iteration_number, 'Sigma_iw')
+
+    def Gloc_iw_sh(self, iteration_number):
+        return self.load_local_g_sh(iteration_number, 'Gloc_iw')
+
+    def load_local_g_sh(self, iteration_number, name):
+        g_iw_sh = []
         with h5py.File(self._output_file, 'r') as ar:
             for ish in range(self._n_inequiv_shells):
-                Sigma_iw = make_block_gf(GfImFreq, self._gf_struct[ish], self._beta, self._n_iw)
-                for bname, g in Sigma_iw:
-                    path = self._output_group + '/Sigma_iw/ite{}/sh{}/{}'.format(iteration_number, ish, bname)
+                g_iw = make_block_gf(GfImFreq, self._gf_struct[ish], self._beta, self._n_iw)
+                for bname, g in g_iw:
+                    path = self._output_group + '/{}/ite{}/sh{}/{}'.format(name, iteration_number, ish, bname)
                     load_giw(ar, path, g)
-                Sigma_iw_sh.append(Sigma_iw)
-        return Sigma_iw_sh
+                g_iw_sh.append(g_iw)
+        return g_iw_sh
 
 

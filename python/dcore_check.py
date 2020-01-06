@@ -154,15 +154,15 @@ class DMFTCoreCheck(object):
         print(" Output " + filename)
 
 
-    def write_sigma_text(self, basename):
+    def write_local_giw_text(self, basename, name):
         """
-        Output Sigma into a text file
+        Output local Green's function data into a text file
         """
 
         from .tools import save_Sigma_iw_sh_txt
 
         filename = basename + '.dat'
-        save_Sigma_iw_sh_txt(basename + '.dat', self.solver.Sigma_iw_sh(self.n_iter), self.spin_names)
+        save_Sigma_iw_sh_txt(basename + '.dat', self.solver.load_local_g_sh(self.n_iter, name), self.spin_names)
 
         print(" Output " + filename)
 
@@ -283,7 +283,8 @@ def dcore_check(ini_file, prefix, fig_ext, max_n_iter):
 
     check = DMFTCoreCheck(ini_file, max_n_iter)
     check.print_chemical_potential()
-    check.write_sigma_text(basename=prefix+"sigma")
+    check.write_local_giw_text(prefix+"sigma", 'Sigma_iw')
+    check.write_local_giw_text(prefix+"gloc", 'Gloc_iw')
     check.plot_sigma_ave(basename=prefix+"sigma_ave", fig_ext=ext)
     check.plot_iter_mu(basename=prefix+"iter_mu", fig_ext=ext)
     check.plot_iter_sigma(basename=prefix+"iter_sigma", fig_ext=ext)
