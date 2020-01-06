@@ -86,6 +86,11 @@ class ShellQuantity(object):
         for name, g in self.Sigma_iw:
             g.zero()
 
+        # Local Green's function
+        self.Gloc_iw = make_block_gf(GfImFreq, gf_struct, beta, n_iw)
+        for name, g in self.Gloc_iw:
+            g.zero()
+
 
 def solve_impurity_model(solver_name, solver_params, mpirun_command, basis_rot, Umat, gf_struct, beta, n_iw, Sigma_iw, Gloc_iw, mesh, ish, work_dir):
     """
@@ -600,6 +605,8 @@ class DMFTCoreSolver(object):
 
             # Compute Gloc_iw where the chemical potential is adjusted if needed
             Gloc_iw_sh, dm_sh = self.calc_Gloc()
+            for ish in range(self._n_inequiv_shells):
+                self._sh_quant[ish].Gloc_iw << Gloc_iw_sh[ish]
             self.print_density_matrix(dm_sh)
 
             for ish in range(self._n_inequiv_shells):
@@ -627,7 +634,7 @@ class DMFTCoreSolver(object):
                     symmetrize_spin(new_Gimp_iw[ish])
                     symmetrize_spin(new_Sigma_iw[ish])
 
-            # Update Sigma_iw and Gimp_iw.
+            # Update Sigma_iw and Gloc_iw.
             # Mix Sigma if requested.
             if iteration_number > 1 or previous_present:
                 for ish in range(self._n_inequiv_shells):
@@ -650,6 +657,12 @@ class DMFTCoreSolver(object):
                     for bname, g in self._sh_quant[ish].Sigma_iw:
                         path = output_group + '/Sigma_iw/ite{}/sh{}/{}'.format(iteration_number, ish, bname)
                         save_giw(ar, path, g)
+
+                    if self._params['control']['save_Gloc_iw']:
+                        for bname, g in self._sh_quant[ish].Gloc_iw:
+                            path = output_group + '/Gloc_iw/ite{}/sh{}/{}'.format(iteration_number, ish, bname)
+                            save_giw(ar, path, g)
+
 
             sys.stdout.flush()
 
