@@ -20,7 +20,7 @@ import os
 import numpy
 from warnings import warn
 
-from h5 import HDFArchive
+from ._dispatcher import HDFArchive
 
 from .program_options import create_parser, parse_parameters
 from .dmft_core import DMFTCoreSolver

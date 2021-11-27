@@ -21,7 +21,7 @@ import numpy
 
 from dcore.program_options import create_parser, parse_parameters
 from dcore.tools import make_empty_dir, launch_mpi_subprocesses
-from h5.archive import HDFArchive
+from ._dispatcher import HDFArchive
 
 def dcore_sparse_bse(filename, np=1, prefix="./"):
     # Construct a parser with default values
