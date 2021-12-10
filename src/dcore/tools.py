@@ -30,10 +30,6 @@ from scipy import linalg as scipy_linalg
 from dcore._dispatcher import h5diff as h5diff_org, compare, \
     BlockGf, HDFArchive, failures, MeshImFreq, fit_hermitian_tail, Gf, GfImFreq
 
-"""
-THIS MODULE MUST NOT DEPEND ON MPI!
-"""
-
 
 def h5diff(f1, f2, key=None, precision=1.e-6):
     """
@@ -862,6 +858,7 @@ def symmetrize(Sigma_iw, generators):
         Symmetrized self-energy.
 
     """
+    assert isinstance(generators, list)
 
     Sigma_iw_symm = Sigma_iw.copy()
 
