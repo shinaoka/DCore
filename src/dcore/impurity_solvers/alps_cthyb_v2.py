@@ -15,14 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
-
-from .version import version as __version__
-from . import _version
-
-__version__ = _version.get_versions()['version']
+from .base import SolverBase
+class ALPSCTHYBSolver_v2(SolverBase):
+    pass
 
 try:
-    import irbasis_x
-    irbasis_x_available = True
-except ImportError:
-    irbasis_x_available = False
+    from ._alps_cthyb_v2 import *
+except:
+    pass
